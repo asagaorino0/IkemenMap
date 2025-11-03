@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "推しまてる | スタッフ紹介アプリ",
+  title: "推しまてる | イケメンマップ",
   description: "店舗とスタッフの位置情報を地図で確認できます",
 };
 
