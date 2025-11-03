@@ -1,11 +1,12 @@
-import { db } from "@/server/db";
-import { stores } from "@/shared/schema";
+import { container } from "@/server/db";
+import { v4 as uuidv4 } from "uuid";
 
 async function seed() {
-  console.log("データベースにシードデータを投入中...");
+  console.log("Cosmos DBにシードデータを投入中...");
 
   const sampleStores = [
     {
+      id: uuidv4(),
       companyName: "イケメン株式会社",
       storeName: "渋谷センター店",
       address: "東京都渋谷区渋谷2-21-1",
@@ -17,6 +18,7 @@ async function seed() {
       postedAt: new Date("2025-10-12"),
     },
     {
+      id: uuidv4(),
       companyName: "メンズサロン株式会社",
       storeName: "新宿東口店",
       address: "東京都新宿区新宿3-38-1",
@@ -28,6 +30,7 @@ async function seed() {
       postedAt: new Date("2025-10-15"),
     },
     {
+      id: uuidv4(),
       companyName: "スタイリッシュ株式会社",
       storeName: "原宿本店",
       address: "東京都渋谷区神宮前1-19-11",
@@ -39,6 +42,7 @@ async function seed() {
       postedAt: new Date("2025-10-18"),
     },
     {
+      id: uuidv4(),
       companyName: "プレミアムサロン株式会社",
       storeName: "六本木ヒルズ店",
       address: "東京都港区六本木6-10-1",
@@ -50,6 +54,7 @@ async function seed() {
       postedAt: new Date("2025-10-20"),
     },
     {
+      id: uuidv4(),
       companyName: "エリートサロン株式会社",
       storeName: "銀座中央店",
       address: "東京都中央区銀座4-6-16",
@@ -61,6 +66,7 @@ async function seed() {
       postedAt: new Date("2025-10-22"),
     },
     {
+      id: uuidv4(),
       companyName: "モダンサロン株式会社",
       storeName: "表参道本店",
       address: "東京都渋谷区神宮前4-12-10",
@@ -72,6 +78,7 @@ async function seed() {
       postedAt: new Date("2025-10-25"),
     },
     {
+      id: uuidv4(),
       companyName: "トレンドサロン株式会社",
       storeName: "池袋西口店",
       address: "東京都豊島区西池袋1-1-25",
@@ -83,6 +90,7 @@ async function seed() {
       postedAt: new Date("2025-10-27"),
     },
     {
+      id: uuidv4(),
       companyName: "ラグジュアリーサロン株式会社",
       storeName: "恵比寿ガーデンプレイス店",
       address: "東京都渋谷区恵比寿4-20-3",
@@ -95,7 +103,11 @@ async function seed() {
     },
   ];
 
-  await db.insert(stores).values(sampleStores);
+  for (const store of sampleStores) {
+    await container.items.create(store);
+    console.log(`✓ ${store.staffName} - ${store.storeName} を追加しました`);
+  }
+
   console.log("シードデータの投入が完了しました！");
 }
 

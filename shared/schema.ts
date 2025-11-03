@@ -1,21 +1,30 @@
-import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const stores = pgTable("stores", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  companyName: text("company_name").notNull(),
-  storeName: text("store_name").notNull(),
-  address: text("address").notNull(),
-  tel: text("tel").notNull(),
-  sns: text("sns"),
-  staffName: text("staff_name").notNull(),
-  latitude: text("latitude").notNull(),
-  longitude: text("longitude").notNull(),
-  postedAt: timestamp("posted_at").notNull().defaultNow(),
+// Store item type for Cosmos DB
+export interface Store {
+  id: string;
+  companyName: string;
+  storeName: string;
+  address: string;
+  tel: string;
+  sns?: string;
+  staffName: string;
+  latitude: string;
+  longitude: string;
+  postedAt: Date;
+}
+
+// Zod schema for validation
+export const insertStoreSchema = z.object({
+  companyName: z.string().min(1),
+  storeName: z.string().min(1),
+  address: z.string().min(1),
+  tel: z.string().min(1),
+  sns: z.string().optional(),
+  staffName: z.string().min(1),
+  latitude: z.string().min(1),
+  longitude: z.string().min(1),
+  postedAt: z.date().optional(),
 });
 
-export const insertStoreSchema = createInsertSchema(stores).omit({ id: true });
 export type InsertStore = z.infer<typeof insertStoreSchema>;
-export type Store = typeof stores.$inferSelect;

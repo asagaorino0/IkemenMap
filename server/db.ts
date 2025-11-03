@@ -1,15 +1,35 @@
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import ws from "ws";
-import * as schema from "@shared/schema";
+import { CosmosClient } from '@azure/cosmos';
 
-neonConfig.webSocketConstructor = ws;
-
-if (!process.env.DATABASE_URL) {
+if (!process.env.COSMOS_DB_ENDPOINT) {
   throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?",
+    "COSMOS_DB_ENDPOINT must be set. Did you forget to configure Cosmos DB?",
   );
 }
 
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-export const db = drizzle({ client: pool, schema });
+if (!process.env.COSMOS_DB_KEY) {
+  throw new Error(
+    "COSMOS_DB_KEY must be set. Did you forget to configure Cosmos DB?",
+  );
+}
+
+if (!process.env.COSMOS_DB_DATABASE_NAME) {
+  throw new Error(
+    "COSMOS_DB_DATABASE_NAME must be set. Did you forget to configure Cosmos DB?",
+  );
+}
+
+if (!process.env.COSMOS_DB_CONTAINER_NAME) {
+  throw new Error(
+    "COSMOS_DB_CONTAINER_NAME must be set. Did you forget to configure Cosmos DB?",
+  );
+}
+
+const endpoint = process.env.COSMOS_DB_ENDPOINT;
+const key = process.env.COSMOS_DB_KEY;
+const databaseId = process.env.COSMOS_DB_DATABASE_NAME;
+const containerId = process.env.COSMOS_DB_CONTAINER_NAME;
+
+// Initialize Cosmos DB client
+export const client = new CosmosClient({ endpoint, key });
+export const database = client.database(databaseId);
+export const container = database.container(containerId);

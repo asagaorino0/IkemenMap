@@ -1,0 +1,30 @@
+eriko@MacBookAir IkemenMap % git commit -m "Initial commit"
+[main efdc880] Initial commit
+ 18 files changed, 2 insertions(+)
+ create mode 100644 .local/state/replit/agent/.agent_state_0954afa9c68a13df7d687d73a81d57cdb9b472fa.bin
+ create mode 100644 .local/state/replit/agent/.agent_state_14048442438289d59e341ad21e833f3e0252b3e6.bin
+ create mode 100644 .local/state/replit/agent/.agent_state_19fe69ed6db1a077a2a3b715d560b58cf8b53905.bin
+ create mode 100644 .local/state/replit/agent/.agent_state_1b89caad5da029cd40cafa14a7c1c1106a77c1de.bin
+ create mode 100644 .local/state/replit/agent/.agent_state_3d19049f3dfb9bdf7feba36a5af3695b61c60af6.bin
+ create mode 100644 .local/state/replit/agent/.agent_state_444f8c63c40500b95c921f5a86d5d20e5273000a.bin
+ create mode 100644 .local/state/replit/agent/.agent_state_4b416fae292edf222f6c2c777031ad648186dd98.bin
+ create mode 100644 .local/state/replit/agent/.agent_state_5abaa189204e4d7ad2bdbfee3899daa3b1d16b42.bin
+ create mode 100644 .local/state/replit/agent/.agent_state_79235f2dbfd1eba05d938ea07e1ff885f860120b.bin
+ create mode 100644 .local/state/replit/agent/.agent_state_847f1e3bd6857e5818a6b9158c811b960a881ce1.bin
+ create mode 100644 .local/state/replit/agent/.agent_state_d9dd885ba1779e36466162f5870c027fa9da9031.bin
+ create mode 100644 .local/state/replit/agent/.agent_state_e4be2a93c59e25ef12d7d7caad0bcb283364a514.bin
+ create mode 100644 .local/state/replit/agent/.agent_state_f2fdd765e260d928092205c358ba0686f28fced9.bin
+ create mode 100644 .local/state/replit/agent/.agent_state_fe0009308c36a72bf745d09a933f5342f8546de5.bin
+ create mode 100644 .local/state/replit/agent/.agent_state_main.bin
+ create mode 100644 .local/state/replit/agent/.latest.json
+ create mode 100644 .local/state/replit/agent/filesystem/filesystem_state.json
+ create mode 100644 .local/state/replit/agent/repl_state.bin
+eriko@MacBookAir IkemenMap % git branch -M main
+git push -u origin main
+To https://github.com/asagaorino0/IkemenMap.git
+ ! [rejected]        main -> main (non-fast-forward)
+error: failed to push some refs to 'https://github.com/asagaorino0/IkemenMap.git'
+hint: Updates were rejected because the tip of your current branch is behind
+hint: its remote counterpart. Integrate the remote changes (e.g.
+hint: 'git pull ...') before pushing again.
+hint: See the 'Note about fast-forwards' in 'git push --help' for details.

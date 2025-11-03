@@ -1,34 +1,59 @@
 "use server";
 
-import { db } from "@/server/db";
-import { stores } from "@/shared/schema";
-import { desc, eq, or, ilike } from "drizzle-orm";
+import { container } from "@/server/db";
+import { Store } from "@/shared/schema";
 
-export async function getAllStores() {
-  return await db.select().from(stores).orderBy(desc(stores.postedAt));
+export async function getAllStores(): Promise<Store[]> {
+  const { resources: items } = await container.items
+    .query<Store>({
+      query: "SELECT * FROM c ORDER BY c.postedAt DESC"
+    })
+    .fetchAll();
+  
+  return items.map(item => ({
+    ...item,
+    postedAt: new Date(item.postedAt)
+  }));
 }
 
-export async function getStoreById(id: string) {
-  const result = await db.select().from(stores).where(eq(stores.id, id));
-  return result[0] || null;
+export async function getStoreById(id: string): Promise<Store | null> {
+  try {
+    const { resource: item } = await container.item(id, id).read<Store>();
+    if (!item) return null;
+    
+    return {
+      ...item,
+      postedAt: new Date(item.postedAt)
+    };
+  } catch (error: any) {
+    if (error.code === 404) {
+      return null;
+    }
+    throw error;
+  }
 }
 
-export async function searchStores(query: string) {
+export async function searchStores(query: string): Promise<Store[]> {
   if (!query) {
     return await getAllStores();
   }
 
-  const searchPattern = `%${query}%`;
-  return await db
-    .select()
-    .from(stores)
-    .where(
-      or(
-        ilike(stores.companyName, searchPattern),
-        ilike(stores.storeName, searchPattern),
-        ilike(stores.address, searchPattern),
-        ilike(stores.staffName, searchPattern)
-      )
-    )
-    .orderBy(desc(stores.postedAt));
+  const { resources: items } = await container.items
+    .query<Store>({
+      query: `
+        SELECT * FROM c 
+        WHERE CONTAINS(LOWER(c.companyName), LOWER(@query))
+           OR CONTAINS(LOWER(c.storeName), LOWER(@query))
+           OR CONTAINS(LOWER(c.address), LOWER(@query))
+           OR CONTAINS(LOWER(c.staffName), LOWER(@query))
+        ORDER BY c.postedAt DESC
+      `,
+      parameters: [{ name: "@query", value: query }]
+    })
+    .fetchAll();
+  
+  return items.map(item => ({
+    ...item,
+    postedAt: new Date(item.postedAt)
+  }));
 }

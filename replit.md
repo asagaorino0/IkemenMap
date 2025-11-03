@@ -5,7 +5,7 @@ Next.js 15とGoogle Maps APIを使用したスタッフ紹介アプリ。地図�
 
 ## 現在の状態
 - ✅ **Next.js 15.5.6** ポート5000で稼働中
-- ✅ **データベース** PostgreSQL + Drizzle ORM
+- ✅ **データベース** Azure Cosmos DB (NoSQL API)
 - ✅ **シードデータ** 8店舗（東京エリア、日本語）
 - ✅ **地図ページ** Google Maps統合、検索機能付き
 - ✅ **掲載一覧ページ** 投稿日順（新しい順）
@@ -20,8 +20,8 @@ Next.js 15とGoogle Maps APIを使用したスタッフ紹介アプリ。地図�
 - **フレームワーク**: Next.js 15.5.6 (App Router)
 - **言語**: TypeScript
 - **スタイリング**: Tailwind CSS 3.x + Shadcn UI
-- **データベース**: PostgreSQL (Neon Serverless)
-- **ORM**: Drizzle ORM
+- **データベース**: Azure Cosmos DB (NoSQL API)
+- **SDK**: @azure/cosmos v4.7.0
 - **地図**: @vis.gl/react-google-maps
 - **日付フォーマット**: date-fns（日本語ロケール）
 
@@ -53,23 +53,38 @@ Next.js 15とGoogle Maps APIを使用したスタッフ紹介アプリ。地図�
 ```
 
 ### データベーススキーマ
-**テーブル: stores**
-- `id` (varchar) - プライマリキー（UUID）
-- `companyName` (text) - 会社名
-- `storeName` (text) - 店舗名
-- `address` (text) - 住所
-- `tel` (text) - 電話番号
-- `sns` (text) - SNSハンドル
-- `staffName` (text) - スタッフ名
-- `latitude` (text) - 緯度
-- `longitude` (text) - 経度
-- `postedAt` (timestamp) - 投稿日（自動設定）
+**Cosmos DB コンテナ: stores**
+
+ドキュメント構造：
+- `id` (string) - ドキュメントID（UUID、パーティションキー）
+- `companyName` (string) - 会社名
+- `storeName` (string) - 店舗名
+- `address` (string) - 住所
+- `tel` (string) - 電話番号
+- `sns` (string, optional) - SNSハンドル
+- `staffName` (string) - スタッフ名
+- `latitude` (string) - 緯度
+- `longitude` (string) - 経度
+- `postedAt` (Date) - 投稿日
 
 ## 環境変数
 
 ### 必須
-- ✅ `DATABASE_URL` - PostgreSQL接続文字列（設定済み）
+- ⚠️ `COSMOS_DB_ENDPOINT` - Cosmos DBエンドポイント（例: https://your-account.documents.azure.com:443/）
+- ⚠️ `COSMOS_DB_KEY` - Cosmos DBプライマリキー
+- ⚠️ `COSMOS_DB_DATABASE_NAME` - データベース名（例: ikemen-map-db）
+- ⚠️ `COSMOS_DB_CONTAINER_NAME` - コンテナ名（例: stores）
 - ✅ `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` - Google Maps APIキー（設定済み）
+
+### Cosmos DB セットアップ手順
+1. [Azure Portal](https://portal.azure.com) にアクセス
+2. Cosmos DBアカウントを作成（API: NoSQL）
+3. データベースとコンテナを作成
+   - データベース名: `ikemen-map-db` （任意）
+   - コンテナ名: `stores`
+   - パーティションキー: `/id`
+4. 「キー」セクションから接続情報をコピー
+5. Replitのシークレット or Vercelの環境変数に設定
 
 ## 主要機能
 
@@ -145,25 +160,27 @@ npx tsx lib/seed.ts
 - TypeScript型安全性向上
 - エラーハンドリング改善（検索機能）
 - Next.js 15クロスオリジン警告解決
+- PostgreSQL + Drizzle ORMからAzure Cosmos DBへ移行（2025年11月3日）
 
 ## ユーザー設定
 - **言語**: 日本語（全UI）
 - **コーディングスタイル**: 関数型コンポーネント、TypeScript
 - **UIライブラリ**: Shadcn UI + Tailwind CSS
-- **データベース**: PostgreSQL + Drizzle ORM
+- **データベース**: Azure Cosmos DB (NoSQL API)
 
 ## デプロイメントチェックリスト
 - [x] Google Maps APIキー設定
-- [x] データベース作成・マイグレーション
-- [x] シードデータ投入
-- [x] Next.js開発サーバー動作確認
-- [x] 地図表示確認
-- [x] 掲載一覧表示確認
-- [x] URL連携動作確認
-- [x] 本番ビルド確認（`npm run build`）
-- [x] デプロイ設定構成完了
+- [ ] Cosmos DBアカウント作成
+- [ ] Cosmos DBデータベース＆コンテナ作成
+- [ ] 環境変数設定（COSMOS_DB_*）
+- [ ] シードデータ投入
+- [ ] Next.js開発サーバー動作確認
+- [ ] 地図表示確認
+- [ ] 掲載一覧表示確認
+- [ ] URL連携動作確認
+- [ ] 本番ビルド確認（`npm run build`）
 - [ ] GitHubリポジトリ作成・プッシュ
-- [ ] Replitへデプロイ
+- [ ] Vercelへデプロイ
 
 ## コマンドリファレンス
 ```bash
@@ -171,9 +188,7 @@ npx tsx lib/seed.ts
 npm run dev          # 開発サーバー起動（ポート5000）
 
 # データベース
-npm run db:push      # スキーマ変更をプッシュ
-npm run db:studio    # Drizzle Studio起動
-npx tsx lib/seed.ts  # シードデータ投入
+npm run seed         # シードデータ投入
 
 # 本番
 npm run build        # 本番ビルド
@@ -188,24 +203,41 @@ npm run start        # 本番サーバー起動
 
 ## デプロイ手順
 
-### GitHubリポジトリの作成
+### 1. Cosmos DBのセットアップ
+1. [Azure Portal](https://portal.azure.com) にアクセス
+2. Cosmos DBアカウントを作成（API: NoSQL）
+3. データベース `ikemen-map-db` を作成
+4. コンテナ `stores` を作成（パーティションキー: `/id`）
+5. 「キー」セクションから接続情報をコピー
+
+### 2. GitHubリポジトリの作成
 1. Replitの左側サイドバーから「Git」アイコンをクリック
 2. GitHubアカウントで認証（初回のみ）
-3. 新しいリポジトリを作成または既存リポジトリに接続
+3. 新しいリポジトリを作成
 4. 変更をステージング・コミット・プッシュ
 
-### Replitへのデプロイ
-1. 画面上部の「Deploy」ボタンをクリック
-2. デプロイタイプ: **Autoscale**（自動スケーリング）
-3. 設定確認:
-   - Build command: `npm run build`
-   - Run command: `npm run start`
-   - マシン: 1vCPU、2GiB RAM
-4. 環境変数確認（自動設定済み）:
+### 3. Vercelへのデプロイ
+1. [vercel.com](https://vercel.com) にアクセス
+2. GitHubアカウントでログイン
+3. 「Add New Project」→ GitHubリポジトリを選択
+4. 環境変数を設定:
+   - `COSMOS_DB_ENDPOINT`
+   - `COSMOS_DB_KEY`
+   - `COSMOS_DB_DATABASE_NAME`
+   - `COSMOS_DB_CONTAINER_NAME`
    - `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`
-   - `DATABASE_URL`
-5. 「Publish」ボタンをクリック
+5. 「Deploy」ボタンをクリック
 6. 数分で本番環境にデプロイ完了
 
+### 4. シードデータの投入
+デプロイ後、ローカルから環境変数を設定してシードデータを投入：
+```bash
+COSMOS_DB_ENDPOINT="your-endpoint" \
+COSMOS_DB_KEY="your-key" \
+COSMOS_DB_DATABASE_NAME="ikemen-map-db" \
+COSMOS_DB_CONTAINER_NAME="stores" \
+npm run seed
+```
+
 ## 最終更新日
-2025年11月3日 - デプロイ準備完了（本番ビルド成功）
+2025年11月3日 - Azure Cosmos DB移行完了
