@@ -1,35 +1,40 @@
 import { CosmosClient } from '@azure/cosmos';
 
-if (!process.env.COSMOS_DB_ENDPOINT) {
+if (!process.env.COSMOS_CONNECTION_STRING) {
   throw new Error(
-    "COSMOS_DB_ENDPOINT must be set. Did you forget to configure Cosmos DB?",
+    "COSMOS_CONNECTION_STRING must be set. Did you forget to configure Cosmos DB?",
   );
 }
 
-if (!process.env.COSMOS_DB_KEY) {
+if (!process.env.AZURE_STORAGE_KEY) {
   throw new Error(
-    "COSMOS_DB_KEY must be set. Did you forget to configure Cosmos DB?",
+    "AZURE_STORAGE_KEY must be set. Did you forget to configure Cosmos DB?",
   );
 }
 
-if (!process.env.COSMOS_DB_DATABASE_NAME) {
+if (!process.env.COSMOS_DATABASE_NAME) {
   throw new Error(
-    "COSMOS_DB_DATABASE_NAME must be set. Did you forget to configure Cosmos DB?",
+    "COSMOS_DATABASE_NAME must be set. Did you forget to configure Cosmos DB?",
   );
 }
 
-if (!process.env.COSMOS_DB_CONTAINER_NAME) {
+if (!process.env.COSMOS_CONTAINER_NAME) {
   throw new Error(
-    "COSMOS_DB_CONTAINER_NAME must be set. Did you forget to configure Cosmos DB?",
+    "COSMOS_CONTAINER_NAME must be set. Did you forget to configure Cosmos DB?",
   );
 }
-
-const endpoint = process.env.COSMOS_DB_ENDPOINT;
-const key = process.env.COSMOS_DB_KEY;
-const databaseId = process.env.COSMOS_DB_DATABASE_NAME;
-const containerId = process.env.COSMOS_DB_CONTAINER_NAME;
+const COSMOS = {
+  conn: process.env.COSMOS_CONNECTION_STRING!,
+  db: process.env.COSMOS_DATABASE_NAME!,
+  loginUser: process.env.COSMOS_CONTAINER_NAME
+};
+const endpoint = process.env.COSMOS_CONNECTION_STRING;
+const key = process.env.AZURE_STORAGE_KEY;
+const databaseId = process.env.COSMOS_DATABASE_NAME;
+const containerId = process.env.COSMOS_CONTAINER_NAME;
 
 // Initialize Cosmos DB client
-export const client = new CosmosClient({ endpoint, key });
+// export const client = new CosmosClient({ endpoint, key });
+const client = new CosmosClient(COSMOS.conn);
 export const database = client.database(databaseId);
 export const container = database.container(containerId);

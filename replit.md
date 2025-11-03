@@ -70,10 +70,10 @@ Next.js 15とGoogle Maps APIを使用したスタッフ紹介アプリ。地図�
 ## 環境変数
 
 ### 必須
-- ⚠️ `COSMOS_DB_ENDPOINT` - Cosmos DBエンドポイント（例: https://your-account.documents.azure.com:443/）
-- ⚠️ `COSMOS_DB_KEY` - Cosmos DBプライマリキー
-- ⚠️ `COSMOS_DB_DATABASE_NAME` - データベース名（例: ikemen-map-db）
-- ⚠️ `COSMOS_DB_CONTAINER_NAME` - コンテナ名（例: stores）
+- ⚠️ `COSMOS_CONNECTION_STRING` - Cosmos DBエンドポイント（例: https://your-account.documents.azure.com:443/）
+- ⚠️ `AZURE_STORAGE_KEY` - Cosmos DBプライマリキー
+- ⚠️ `COSMOS_DATABASE_NAME` - データベース名（例: ikemen-map-db）
+- ⚠️ `COSMOS_CONTAINER_NAME` - コンテナ名（例: stores）
 - ✅ `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` - Google Maps APIキー（設定済み）
 
 ### Cosmos DB セットアップ手順
@@ -221,10 +221,10 @@ npm run start        # 本番サーバー起動
 2. GitHubアカウントでログイン
 3. 「Add New Project」→ GitHubリポジトリを選択
 4. 環境変数を設定:
-   - `COSMOS_DB_ENDPOINT`
-   - `COSMOS_DB_KEY`
-   - `COSMOS_DB_DATABASE_NAME`
-   - `COSMOS_DB_CONTAINER_NAME`
+   - `COSMOS_CONNECTION_STRING`
+   - `AZURE_STORAGE_KEY`
+   - `COSMOS_DATABASE_NAME`
+   - `COSMOS_CONTAINER_NAME`
    - `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`
 5. 「Deploy」ボタンをクリック
 6. 数分で本番環境にデプロイ完了
@@ -232,10 +232,10 @@ npm run start        # 本番サーバー起動
 ### 4. シードデータの投入
 デプロイ後、ローカルから環境変数を設定してシードデータを投入：
 ```bash
-COSMOS_DB_ENDPOINT="your-endpoint" \
-COSMOS_DB_KEY="your-key" \
-COSMOS_DB_DATABASE_NAME="ikemen-map-db" \
-COSMOS_DB_CONTAINER_NAME="stores" \
+COSMOS_CONNECTION_STRING="your-endpoint" \
+AZURE_STORAGE_KEY="your-key" \
+COSMOS_DATABASE_NAME="ikemen-map-db" \
+COSMOS_CONTAINER_NAME="stores" \
 npm run seed
 ```
 
