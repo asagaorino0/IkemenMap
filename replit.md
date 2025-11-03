@@ -1,131 +1,188 @@
-# Staff Introduction Application
+# うちらのイケメン - スタッフ紹介アプリケーション
 
-## Project Overview
-A Next.js 15 App Router application featuring Google Maps integration for displaying staff profiles and store locations. Built with TypeScript, Tailwind CSS, Shadcn UI, and PostgreSQL database with Drizzle ORM.
+## プロジェクト概要
+Next.js 15とGoogle Maps APIを使用したスタッフ紹介アプリ。地図上に店舗マーカーを表示し、クリックで左スライドパネルにスタッフ詳細を表示します。
 
-## Current State
-- ✅ **Next.js 15.5.6** running on port 5000
-- ✅ **Database** configured with Drizzle ORM (PostgreSQL via Neon)
-- ✅ **Sample Data** seeded (5 stores in Tokyo)
-- ✅ **Homepage** with Google Maps integration (requires API key)
-- ✅ **Listings Page** displaying staff cards sorted by date
-- ✅ **Workflow** configured and running successfully
+## 現在の状態
+- ✅ **Next.js 15.5.6** ポート5000で稼働中
+- ✅ **データベース** PostgreSQL + Drizzle ORM
+- ✅ **シードデータ** 8店舗（東京エリア、日本語）
+- ✅ **地図ページ** Google Maps統合、検索機能付き
+- ✅ **掲載一覧ページ** 投稿日順（新しい順）
+- ✅ **ナビゲーションバー** 地図・掲載一覧の切り替え
+- ✅ **URL連携** ?storeId=xxxで詳細パネル自動表示
+- ✅ **日本語UI** すべてのテキストが日本語
+- ✅ **data-testid** 全インタラクティブ要素に追加済み
 
-## Project Architecture
+## プロジェクトアーキテクチャ
 
-### Tech Stack
-- **Framework**: Next.js 15.5.6 (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS 3.x + Shadcn UI
-- **Database**: PostgreSQL (Neon Serverless)
+### 技術スタック
+- **フレームワーク**: Next.js 15.5.6 (App Router)
+- **言語**: TypeScript
+- **スタイリング**: Tailwind CSS 3.x + Shadcn UI
+- **データベース**: PostgreSQL (Neon Serverless)
 - **ORM**: Drizzle ORM
-- **Maps**: @vis.gl/react-google-maps
+- **地図**: @vis.gl/react-google-maps
+- **日付フォーマット**: date-fns（日本語ロケール）
 
-### Directory Structure
+### ディレクトリ構成
 ```
 ├── app/                    # Next.js App Router
-│   ├── page.tsx           # Homepage with map
-│   ├── listings/page.tsx  # Staff listings
-│   ├── layout.tsx         # Root layout
-│   └── globals.css        # Global styles
-├── components/            # React components
-│   ├── map-view.tsx       # Google Maps wrapper
-│   ├── staff-panel.tsx    # Sliding staff panel
-│   └── ui/                # Shadcn components
-├── lib/                   # Utilities
-│   ├── actions.ts         # Server actions
-│   ├── seed.ts            # DB seed script
-│   └── utils.ts           # Helper functions
-├── server/                # Server code
-│   └── db.ts              # DB connection
-└── shared/                # Shared code
-    └── schema.ts          # DB schema
+│   ├── page.tsx           # 地図ページ（ホーム）
+│   ├── listings/page.tsx  # 掲載一覧ページ
+│   ├── layout.tsx         # ルートレイアウト
+│   └── globals.css        # グローバルスタイル
+├── components/            # Reactコンポーネント
+│   ├── navbar.tsx         # ナビゲーションバー
+│   ├── map-view.tsx       # Google Maps + 検索バー
+│   ├── staff-panel.tsx    # 左スライドパネル（Sheet）
+│   └── ui/                # Shadcnコンポーネント
+│       ├── button.tsx
+│       ├── card.tsx
+│       ├── input.tsx
+│       ├── sheet.tsx
+│       └── separator.tsx
+├── lib/                   # ユーティリティ
+│   ├── actions.ts         # サーバーアクション
+│   ├── seed.ts            # DBシードスクリプト
+│   └── utils.ts           # ヘルパー関数
+├── server/                # サーバーコード
+│   └── db.ts              # DB接続
+└── shared/                # 共有コード
+    └── schema.ts          # DBスキーマ
 ```
 
-### Database Schema
-**Table: stores**
-- `id` (serial) - Primary key
-- `companyName` (text) - Company name
-- `storeName` (text) - Store name
-- `address` (text) - Full address
-- `tel` (text) - Phone number
-- `sns` (text) - Social media handle
-- `staffName` (text) - Staff member name
-- `latitude` (double) - Map latitude
-- `longitude` (double) - Map longitude
-- `postedAt` (timestamp) - Created date (auto)
+### データベーススキーマ
+**テーブル: stores**
+- `id` (varchar) - プライマリキー（UUID）
+- `companyName` (text) - 会社名
+- `storeName` (text) - 店舗名
+- `address` (text) - 住所
+- `tel` (text) - 電話番号
+- `sns` (text) - SNSハンドル
+- `staffName` (text) - スタッフ名
+- `latitude` (text) - 緯度
+- `longitude` (text) - 経度
+- `postedAt` (timestamp) - 投稿日（自動設定）
 
-## Environment Variables Required
+## 環境変数
 
-### Current Setup
-- ✅ `DATABASE_URL` - PostgreSQL connection (configured)
-- ⚠️ `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` - Google Maps API key (needs to be added)
+### 必須
+- ✅ `DATABASE_URL` - PostgreSQL接続文字列（設定済み）
+- ✅ `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` - Google Maps APIキー（設定済み）
 
-### How to Add Google Maps API Key
-1. Create `.env.local` file in project root
-2. Add: `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_key_here`
-3. Get API key from [Google Cloud Console](https://console.cloud.google.com/)
-4. Enable Maps JavaScript API for your project
+## 主要機能
 
-## Key Features
+### 1. 地図ページ (/)
+- Google Mapsに8店舗のマーカー表示
+- 検索バー：会社名、店舗名、住所、スタッフ名でリアルタイム検索
+- マーカークリック → 左スライドパネルで詳細表示
+- URLパラメータ対応：`/?storeId=xxx`で該当スタッフを自動表示
+- ナビゲーションバー：「地図」「掲載一覧」ボタン
 
-### 1. Interactive Map (/)
-- Google Maps with store markers
-- Click markers to view staff profiles
-- Sliding panel shows detailed information
-- "View All Staff" button to listings
+### 2. 掲載一覧ページ (/listings)
+- 投稿日順（新しい順）にカード表示
+- 日付フォーマット：「yyyy年MM月dd日」（date-fns + 日本語ロケール）
+- カードクリック → `/?storeId=xxx`に遷移 → 地図ページで詳細パネル自動表示
+- Separator使用、hover/activeエフェクト
 
-### 2. Staff Listings (/listings)
-- Grid layout with staff cards
-- Sorted by posted date (newest first)
-- Contact information display
-- Back button to map view
+### 3. スタッフ詳細パネル（Sheet）
+- 左側からスライド表示（Shadcn UI Sheet）
+- レスポンシブ幅：モバイル75%、デスクトップ384px
+- 表示内容：スタッフ名、会社名、店舗名、住所、電話、SNS
+- 「ルートを検索」ボタン → Google Maps方向案内
+- data-testid属性完備
 
-### 3. Database Operations
-- **Seed**: `npx tsx lib/seed.ts`
-- **Push Schema**: `npm run db:push`
-- **Studio**: `npm run db:studio`
+### 4. ナビゲーション
+- 全ページ共通のナビゲーションバー
+- アクティブページをハイライト表示
+- アプリ名「うちらのイケメン」表示
 
-## Recent Changes (Latest Session)
-- ✅ Fixed Next.js 16 → 15 version mismatch
-- ✅ Fixed Tailwind CSS v4 → v3 compatibility
-- ✅ Fixed Drizzle ORM query syntax (eq function)
-- ✅ Fixed WebSocket bufferutil dependency
-- ✅ Added comprehensive README
-- ✅ Removed deprecated turbo config warnings
-- ✅ All tasks completed and architect-reviewed
+## データベース操作
 
-## Known Issues & Notes
-- Google Maps won't display until API key is configured (expected)
-- LSP diagnostics present but non-blocking (type inference for client components)
-- Database already seeded with 5 Tokyo stores
-
-## User Preferences
-- Preferred coding style: Clean, modern TypeScript with functional components
-- UI preferences: Minimalist design with Shadcn UI components
-- Database: PostgreSQL with Drizzle ORM over traditional ORMs
-
-## Deployment Checklist
-- [ ] Add Google Maps API key to `.env.local`
-- [ ] Test map functionality with API key
-- [ ] Run `npm run build` to verify production build
-- [ ] Configure allowedDevOrigins in next.config.ts if needed
-- [ ] Deploy to Replit or other hosting platform
-
-## Commands Reference
+### コマンド
 ```bash
-# Development
-npm run dev          # Start dev server (port 5000)
+# スキーマ変更をプッシュ
+npm run db:push
 
-# Database
-npm run db:push      # Push schema changes
-npm run db:studio    # Open Drizzle Studio
-npx tsx lib/seed.ts  # Seed database
+# Drizzle Studio起動
+npm run db:studio
 
-# Production
-npm run build        # Build for production
-npm run start        # Start production server
+# シードデータ投入
+npx tsx lib/seed.ts
 ```
 
-## Last Updated
-November 3, 2025 - Initial project creation complete
+### シードデータ（8店舗）
+東京エリアの店舗を日付順に配置：
+1. 中村颯太 - 恵比寿ガーデンプレイス店（2025-10-28）
+2. 渡辺颯 - 池袋西口店（2025-10-27）
+3. 伊藤陽太 - 表参道本店（2025-10-25）
+4. 高橋蓮 - 銀座中央店（2025-10-22）
+5. 鈴木優 - 六本木ヒルズ店（2025-10-20）
+6. 田中翔 - 原宿本店（2025-10-18）
+7. 佐藤健 - 新宿東口店（2025-10-15）
+8. 山田太郎 - 渋谷センター店（2025-10-12）
+
+## 最近の変更（2025年11月3日）
+
+### 実装完了内容
+1. ✅ データベーススキーマ変更（UUID + varchar、drizzle-zod統合）
+2. ✅ 8店舗の日本語シードデータ作成
+3. ✅ ナビゲーションバー実装（地図・掲載一覧ボタン）
+4. ✅ 検索バー機能（会社名、店舗名、住所、スタッフ名でフィルタリング）
+5. ✅ Shadcn UI Sheet使用の左スライドパネル
+6. ✅ URL連携機能（?storeId=xxx → 詳細パネル自動表示）
+7. ✅ 掲載一覧ページの日本語UI化、日付フォーマット
+8. ✅ カードクリック時のURL遷移実装
+9. ✅ 全UIを日本語に変換
+10. ✅ data-testid属性追加
+11. ✅ Google Maps API設定完了
+12. ✅ Next.js allowedDevOrigins設定（Replit環境対応）
+
+### 技術的な改善
+- date-fns日本語ロケール統合
+- hover-elevate/active-elevate-2クラス追加
+- TypeScript型安全性向上
+- エラーハンドリング改善（検索機能）
+- Next.js 15クロスオリジン警告解決
+
+## ユーザー設定
+- **言語**: 日本語（全UI）
+- **コーディングスタイル**: 関数型コンポーネント、TypeScript
+- **UIライブラリ**: Shadcn UI + Tailwind CSS
+- **データベース**: PostgreSQL + Drizzle ORM
+
+## デプロイメントチェックリスト
+- [x] Google Maps APIキー設定
+- [x] データベース作成・マイグレーション
+- [x] シードデータ投入
+- [x] Next.js開発サーバー動作確認
+- [x] 地図表示確認
+- [x] 掲載一覧表示確認
+- [x] URL連携動作確認
+- [ ] 本番ビルド確認（`npm run build`）
+- [ ] Replitへデプロイ
+
+## コマンドリファレンス
+```bash
+# 開発
+npm run dev          # 開発サーバー起動（ポート5000）
+
+# データベース
+npm run db:push      # スキーマ変更をプッシュ
+npm run db:studio    # Drizzle Studio起動
+npx tsx lib/seed.ts  # シードデータ投入
+
+# 本番
+npm run build        # 本番ビルド
+npm run start        # 本番サーバー起動
+```
+
+## 既知の問題と注意点
+- LSPエラーは既存だが、動作には影響なし（型推論の警告）
+- Replit環境では`allowedDevOrigins`設定が必須
+- Google Maps APIキーは環境変数として管理
+- データベースは開発環境のみ（本番DBは別途設定）
+
+## 最終更新日
+2025年11月3日 - Next.js 15への完全移植完了
