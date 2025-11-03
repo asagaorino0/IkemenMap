@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Staff Introduction | Store Locations",
-  description: "Find our stores and meet our staff members",
+  title: "うちらのイケメン | スタッフ紹介アプリ",
+  description: "店舗とスタッフの位置情報を地図で確認できます",
 };
 
 export default function RootLayout({
@@ -12,7 +12,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="ja">
       <body className="antialiased">
         {children}
       </body>

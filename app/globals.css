@@ -53,3 +53,15 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  .hover-elevate {
+    @apply transition-transform duration-200;
+  }
+  .hover-elevate:hover {
+    @apply transform translate-y-[-2px] shadow-md;
+  }
+  .active-elevate-2:active {
+    @apply transform translate-y-[2px];
+  }
+}

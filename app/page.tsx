@@ -1,21 +1,25 @@
-import { getAllStores } from "@/lib/actions";
+import { getAllStores, getStoreById } from "@/lib/actions";
 import { MapView } from "@/components/map-view";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Navbar } from "@/components/navbar";
 
-export default async function HomePage() {
+interface HomePageProps {
+  searchParams: Promise<{ storeId?: string }>;
+}
+
+export default async function HomePage({ searchParams }: HomePageProps) {
+  const params = await searchParams;
   const stores = await getAllStores();
+  const selectedStoreId = params.storeId || null;
 
   return (
     <div className="relative">
-      <div className="absolute top-4 left-4 z-30">
-        <Link href="/listings">
-          <Button variant="secondary" size="lg">
-            View All Staff
-          </Button>
-        </Link>
+      <Navbar />
+      <div className="pt-16">
+        <MapView 
+          initialStores={stores} 
+          initialSelectedId={selectedStoreId}
+        />
       </div>
-      <MapView stores={stores} />
     </div>
   );
 }

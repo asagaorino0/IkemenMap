@@ -1,35 +1,83 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { APIProvider, Map, AdvancedMarker, Pin } from "@vis.gl/react-google-maps";
 import { Store } from "@/shared/schema";
 import { StaffPanel } from "./staff-panel";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
+import { searchStores } from "@/lib/actions";
 
 interface MapViewProps {
-  stores: Store[];
+  initialStores: Store[];
+  initialSelectedId?: string | null;
 }
 
-export function MapView({ stores }: MapViewProps) {
+export function MapView({ initialStores, initialSelectedId }: MapViewProps) {
+  const [stores, setStores] = useState<Store[]>(initialStores);
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
 
-  const center = stores.length > 0
-    ? { lat: stores[0].latitude, lng: stores[0].longitude }
+  useEffect(() => {
+    if (initialSelectedId) {
+      const store = initialStores.find((s) => s.id === initialSelectedId);
+      if (store) {
+        setSelectedStore(store);
+      }
+    }
+  }, [initialSelectedId, initialStores]);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const results = await searchStores(searchQuery);
+        setStores(results || []);
+      } catch (error) {
+        console.error("検索エラー:", error);
+        setStores([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
+
+  const center = stores && stores.length > 0
+    ? { lat: parseFloat(stores[0].latitude), lng: parseFloat(stores[0].longitude) }
     : { lat: 35.6812, lng: 139.7671 };
 
   return (
     <div className="relative w-full h-screen">
+      <div className="absolute top-20 left-4 right-4 z-20 max-w-md">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            type="text"
+            placeholder="会社名、店舗名、住所、スタッフ名で検索..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 bg-white shadow-lg"
+            data-testid="search-input"
+          />
+        </div>
+      </div>
+
       <APIProvider apiKey={apiKey}>
         <Map
           defaultCenter={center}
           defaultZoom={12}
           mapId="staff-introduction-map"
           className="w-full h-full"
+          data-testid="google-map"
         >
-          {stores.map((store) => (
+          {stores && stores.map((store) => (
             <AdvancedMarker
               key={store.id}
-              position={{ lat: store.latitude, lng: store.longitude }}
+              position={{ lat: parseFloat(store.latitude), lng: parseFloat(store.longitude) }}
               onClick={() => setSelectedStore(store)}
             >
               <Pin
@@ -44,6 +92,7 @@ export function MapView({ stores }: MapViewProps) {
 
       <StaffPanel
         store={selectedStore}
+        open={!!selectedStore}
         onClose={() => setSelectedStore(null)}
       />
     </div>
