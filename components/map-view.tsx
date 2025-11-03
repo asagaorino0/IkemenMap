@@ -16,6 +16,7 @@ interface MapViewProps {
 export function MapView({ initialStores, initialSelectedId }: MapViewProps) {
   const [stores, setStores] = useState<Store[]>(initialStores);
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
+  const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
@@ -25,6 +26,7 @@ export function MapView({ initialStores, initialSelectedId }: MapViewProps) {
       const store = initialStores.find((s) => s.id === initialSelectedId);
       if (store) {
         setSelectedStore(store);
+        setSelectedStoreId(initialSelectedId);
       }
     }
   }, [initialSelectedId, initialStores]);
@@ -45,6 +47,16 @@ export function MapView({ initialStores, initialSelectedId }: MapViewProps) {
 
     return () => clearTimeout(timeoutId);
   }, [searchQuery]);
+
+  const handleMarkerClick = (store: Store) => {
+    setSelectedStore(store);
+    setSelectedStoreId(store.id);
+  };
+
+  const handlePanelClose = () => {
+    setSelectedStore(null);
+    // selectedStoreIdは保持して、ピンの強調表示を維持
+  };
 
   const center = stores && stores.length > 0
     ? { lat: parseFloat(stores[0].latitude), lng: parseFloat(stores[0].longitude) }
@@ -74,26 +86,30 @@ export function MapView({ initialStores, initialSelectedId }: MapViewProps) {
           className="w-full h-full"
           data-testid="google-map"
         >
-          {stores && stores.map((store) => (
-            <AdvancedMarker
-              key={store.id}
-              position={{ lat: parseFloat(store.latitude), lng: parseFloat(store.longitude) }}
-              onClick={() => setSelectedStore(store)}
-            >
-              <Pin
-                background="#1a73e8"
-                borderColor="#174ea6"
-                glyphColor="#fff"
-              />
-            </AdvancedMarker>
-          ))}
+          {stores && stores.map((store) => {
+            const isSelected = store.id === selectedStoreId;
+            return (
+              <AdvancedMarker
+                key={store.id}
+                position={{ lat: parseFloat(store.latitude), lng: parseFloat(store.longitude) }}
+                onClick={() => handleMarkerClick(store)}
+              >
+                <Pin
+                  background={isSelected ? "#ef4444" : "#1a73e8"}
+                  borderColor={isSelected ? "#dc2626" : "#174ea6"}
+                  glyphColor="#fff"
+                  scale={isSelected ? 1.3 : 1.0}
+                />
+              </AdvancedMarker>
+            );
+          })}
         </Map>
       </APIProvider>
 
       <StaffPanel
         store={selectedStore}
         open={!!selectedStore}
-        onClose={() => setSelectedStore(null)}
+        onClose={handlePanelClose}
       />
     </div>
   );
