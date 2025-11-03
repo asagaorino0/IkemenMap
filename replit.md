@@ -160,7 +160,9 @@ npx tsx lib/seed.ts
 - [x] 地図表示確認
 - [x] 掲載一覧表示確認
 - [x] URL連携動作確認
-- [ ] 本番ビルド確認（`npm run build`）
+- [x] 本番ビルド確認（`npm run build`）
+- [x] デプロイ設定構成完了
+- [ ] GitHubリポジトリ作成・プッシュ
 - [ ] Replitへデプロイ
 
 ## コマンドリファレンス
@@ -184,5 +186,26 @@ npm run start        # 本番サーバー起動
 - Google Maps APIキーは環境変数として管理
 - データベースは開発環境のみ（本番DBは別途設定）
 
+## デプロイ手順
+
+### GitHubリポジトリの作成
+1. Replitの左側サイドバーから「Git」アイコンをクリック
+2. GitHubアカウントで認証（初回のみ）
+3. 新しいリポジトリを作成または既存リポジトリに接続
+4. 変更をステージング・コミット・プッシュ
+
+### Replitへのデプロイ
+1. 画面上部の「Deploy」ボタンをクリック
+2. デプロイタイプ: **Autoscale**（自動スケーリング）
+3. 設定確認:
+   - Build command: `npm run build`
+   - Run command: `npm run start`
+   - マシン: 1vCPU、2GiB RAM
+4. 環境変数確認（自動設定済み）:
+   - `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`
+   - `DATABASE_URL`
+5. 「Publish」ボタンをクリック
+6. 数分で本番環境にデプロイ完了
+
 ## 最終更新日
-2025年11月3日 - Next.js 15への完全移植完了
+2025年11月3日 - デプロイ準備完了（本番ビルド成功）
