@@ -64,9 +64,9 @@ export function MapView({ initialStores, initialSelectedId }: MapViewProps) {
 
   return (
     <div className="relative w-full h-screen">
-      <div className="absolute top-20 left-4 right-4 z-20 max-w-md">
+      <div className="absolute top-5 left-4 z-20 max-w-md w-full md:w-96">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
             type="text"
             placeholder="会社名、店舗名、住所、スタッフ名で検索..."
@@ -85,6 +85,9 @@ export function MapView({ initialStores, initialSelectedId }: MapViewProps) {
           mapId="staff-introduction-map"
           className="w-full h-full"
           data-testid="google-map"
+          mapTypeControl={false}
+          fullscreenControl={false}
+          streetViewControl={false}
         >
           {stores && stores.map((store) => {
             const isSelected = store.id === selectedStoreId;
