@@ -13,7 +13,7 @@ export function Navbar() {
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-gray-900" data-testid="app-title">
-            うちらのイケメン
+            推しまてる
           </h1>
           <div className="flex gap-2">
             <Link href="/">
