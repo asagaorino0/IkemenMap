@@ -13,6 +13,8 @@ import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 import Link from "next/link";
 
+export const dynamic = 'force-dynamic';
+
 export default async function ListingsPage() {
   const stores = await getAllStores();
 
@@ -33,7 +35,7 @@ export default async function ListingsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {stores.map((store) => (
               <Link key={store.id} href={`/?storeId=${store.id}`}>
-                <Card 
+                <Card
                   className="hover:shadow-lg transition-shadow cursor-pointer hover-elevate active-elevate-2 h-full"
                   data-testid={`store-card-${store.id}`}
                 >
