@@ -12,7 +12,9 @@ export function Navbar() {
     <nav className="fixed top-0 left-0 right-0 bg-white shadow-md z-30" data-testid="navbar">
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold text-gray-900" data-testid="app-title">
+          {/* <h1 className="text-4xl font-bold text-gray-900 font-[family-name:var(--font-shippori-mincho)]" data-testid="app-title"> */}
+          {/* <h1 className="text-4xl font-bold text-gray-900 font-[family-name:var(--font-yuji-syuku)]" data-testid="app-title"></h1> */}
+          <h1 className="text-5xl text-gray-900 font-[family-name:var(--font-yuji-boku)]" data-testid="app-title">
             推しまてる
           </h1>
           <div className="flex gap-2">
