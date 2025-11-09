@@ -1,7 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { APIProvider, Map, AdvancedMarker, Pin, useMap } from "@vis.gl/react-google-maps";
+import {
+  APIProvider,
+  Map,
+  AdvancedMarker,
+  Pin,
+  useMap,
+} from "@vis.gl/react-google-maps";
 import { Store } from "@/shared/schema";
 import { StaffPanel } from "./staff-panel";
 import { AddStoreForm } from "./add-store-form";
@@ -22,7 +28,11 @@ interface ContextMenuState {
   lng: number;
 }
 
-function MapEventHandler({ onRightClick }: { onRightClick: (e: google.maps.MapMouseEvent) => void }) {
+function MapEventHandler({
+  onRightClick,
+}: {
+  onRightClick: (e: google.maps.MapMouseEvent) => void;
+}) {
   const map = useMap();
 
   useEffect(() => {
@@ -33,6 +43,41 @@ function MapEventHandler({ onRightClick }: { onRightClick: (e: google.maps.MapMo
       google.maps.event.removeListener(listener);
     };
   }, [map, onRightClick]);
+
+  return null;
+}
+
+function MapCenterController({
+  stores,
+  searchQuery,
+}: {
+  stores: Store[];
+  searchQuery: string;
+}) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!map || !searchQuery) return;
+
+    // 検索クエリをジオコーディングして地図を移動
+    const geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ address: searchQuery, region: 'jp' }, (results, status) => {
+      if (status === "OK" && results && results[0]) {
+        const location = results[0].geometry.location;
+        map.panTo(location);
+        map.setZoom(14);
+      } else if (stores.length > 0) {
+        // ジオコーディングに失敗した場合、最初の店舗位置に移動
+        const firstStore = stores[0];
+        const center = {
+          lat: parseFloat(firstStore.latitude),
+          lng: parseFloat(firstStore.longitude),
+        };
+        map.panTo(center);
+        map.setZoom(14);
+      }
+    });
+  }, [map, stores, searchQuery]);
 
   return null;
 }
@@ -51,7 +96,10 @@ export function MapView({ initialStores, initialSelectedId }: MapViewProps) {
     lng: 0,
   });
   const [showAddForm, setShowAddForm] = useState(false);
-  const [selectedLocation, setSelectedLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
 
   useEffect(() => {
@@ -147,13 +195,17 @@ export function MapView({ initialStores, initialSelectedId }: MapViewProps) {
         setContextMenu({ ...contextMenu, show: false });
       }
     };
-    document.addEventListener('click', handleClick);
-    return () => document.removeEventListener('click', handleClick);
+    document.addEventListener("click", handleClick);
+    return () => document.removeEventListener("click", handleClick);
   }, [contextMenu.show]);
 
-  const center = stores && stores.length > 0
-    ? { lat: parseFloat(stores[0].latitude), lng: parseFloat(stores[0].longitude) }
-    : { lat: 35.6812, lng: 139.7671 };
+  const center =
+    stores && stores.length > 0
+      ? {
+        lat: parseFloat(stores[0].latitude),
+        lng: parseFloat(stores[0].longitude),
+      }
+      : { lat: 35.6812, lng: 139.7671 };
 
   return (
     <div className="relative w-full h-screen">
@@ -168,6 +220,15 @@ export function MapView({ initialStores, initialSelectedId }: MapViewProps) {
             className="pl-10 bg-white shadow-lg"
             data-testid="search-input"
           />
+        </div>
+      </div>
+
+      {/* 地図の中心を示す十字マーク */}
+      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none">
+        <div className="relative w-8 h-8">
+          <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-red-500 transform -translate-y-1/2"></div>
+          <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-red-500 transform -translate-x-1/2"></div>
+          <div className="absolute top-1/2 left-1/2 w-2 h-2 bg-red-500 rounded-full transform -translate-x-1/2 -translate-y-1/2"></div>
         </div>
       </div>
 
@@ -200,23 +261,28 @@ export function MapView({ initialStores, initialSelectedId }: MapViewProps) {
           streetViewControl={false}
         >
           <MapEventHandler onRightClick={handleMapRightClick} />
-          {stores && stores.map((store) => {
-            const isSelected = store.id === selectedStoreId;
-            return (
-              <AdvancedMarker
-                key={store.id}
-                position={{ lat: parseFloat(store.latitude), lng: parseFloat(store.longitude) }}
-                onClick={() => handleMarkerClick(store)}
-              >
-                <Pin
-                  background={isSelected ? "#ef4444" : "#1a73e8"}
-                  borderColor={isSelected ? "#dc2626" : "#174ea6"}
-                  glyphColor="#fff"
-                  scale={isSelected ? 1.3 : 1.0}
-                />
-              </AdvancedMarker>
-            );
-          })}
+          <MapCenterController stores={stores} searchQuery={searchQuery} />
+          {stores &&
+            stores.map((store) => {
+              const isSelected = store.id === selectedStoreId;
+              return (
+                <AdvancedMarker
+                  key={store.id}
+                  position={{
+                    lat: parseFloat(store.latitude),
+                    lng: parseFloat(store.longitude),
+                  }}
+                  onClick={() => handleMarkerClick(store)}
+                >
+                  <Pin
+                    background={isSelected ? "#ef4444" : "#1a73e8"}
+                    borderColor={isSelected ? "#dc2626" : "#174ea6"}
+                    glyphColor="#fff"
+                    scale={isSelected ? 1.3 : 1.0}
+                  />
+                </AdvancedMarker>
+              );
+            })}
         </Map>
       </APIProvider>
 
