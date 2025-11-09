@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ interface AddStoreFormProps {
 
 export function AddStoreForm({ open, onClose, location, onStoreAdded }: AddStoreFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingAddress, setIsLoadingAddress] = useState(false);
   const [formData, setFormData] = useState({
     companyName: "",
     storeName: "",
@@ -26,6 +27,25 @@ export function AddStoreForm({ open, onClose, location, onStoreAdded }: AddStore
     sns: "",
     staffName: "",
   });
+
+  useEffect(() => {
+    if (location && open) {
+      setIsLoadingAddress(true);
+      const geocoder = new google.maps.Geocoder();
+      const latLng = new google.maps.LatLng(location.lat, location.lng);
+
+      geocoder.geocode({ location: latLng }, (results, status) => {
+        setIsLoadingAddress(false);
+        if (status === "OK" && results && results[0]) {
+          let address = results[0].formatted_address;
+          address = address.replace(/^日本、〒\d{3}-\d{4}\s+/, '');
+          setFormData(prev => ({ ...prev, address }));
+        } else {
+          console.error("住所の取得に失敗しました:", status);
+        }
+      });
+    }
+  }, [location, open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,7 +133,8 @@ export function AddStoreForm({ open, onClose, location, onStoreAdded }: AddStore
               required
               value={formData.address}
               onChange={(e) => handleChange("address", e.target.value)}
-              placeholder="東京都渋谷区..."
+              placeholder={isLoadingAddress ? "住所を取得中..." : "東京都渋谷区..."}
+              disabled={isLoadingAddress}
               data-testid="form-address"
             />
           </div>
