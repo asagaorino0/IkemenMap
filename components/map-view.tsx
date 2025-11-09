@@ -36,10 +36,16 @@ function MapEventHandler({
   const map = useMap();
 
   useEffect(() => {
-    if (!map) return;
+    if (!map) {
+      console.log("MapEventHandler: mapがまだ初期化されていません");
+      return;
+    }
 
+    console.log("MapEventHandler: rightclickリスナーを登録");
     const listener = map.addListener("rightclick", onRightClick);
+
     return () => {
+      console.log("MapEventHandler: rightclickリスナーを削除");
       google.maps.event.removeListener(listener);
     };
   }, [map, onRightClick]);
@@ -259,6 +265,9 @@ export function MapView({ initialStores, initialSelectedId }: MapViewProps) {
           mapTypeControl={false}
           fullscreenControl={false}
           streetViewControl={false}
+          gestureHandling="greedy"
+          clickableIcons={false}
+          disableDoubleClickZoom={false}
         >
           <MapEventHandler onRightClick={handleMapRightClick} />
           <MapCenterController stores={stores} searchQuery={searchQuery} />
