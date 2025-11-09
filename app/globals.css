@@ -49,6 +49,7 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }
@@ -58,10 +59,29 @@
   .hover-elevate {
     @apply transition-transform duration-200;
   }
+
   .hover-elevate:hover {
     @apply transform translate-y-[-2px] shadow-md;
   }
+
   .active-elevate-2:active {
     @apply transform translate-y-[2px];
   }
+}
+
+.gm-style {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.gm-style * {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }

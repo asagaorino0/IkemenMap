@@ -67,22 +67,25 @@ function MapCenterController({
 
     // 検索クエリをジオコーディングして地図を移動
     const geocoder = new google.maps.Geocoder();
-    geocoder.geocode({ address: searchQuery, region: 'jp' }, (results, status) => {
-      if (status === "OK" && results && results[0]) {
-        const location = results[0].geometry.location;
-        map.panTo(location);
-        map.setZoom(14);
-      } else if (stores.length > 0) {
-        // ジオコーディングに失敗した場合、最初の店舗位置に移動
-        const firstStore = stores[0];
-        const center = {
-          lat: parseFloat(firstStore.latitude),
-          lng: parseFloat(firstStore.longitude),
-        };
-        map.panTo(center);
-        map.setZoom(14);
-      }
-    });
+    geocoder.geocode(
+      { address: searchQuery, region: "jp" },
+      (results, status) => {
+        if (status === "OK" && results && results[0]) {
+          const location = results[0].geometry.location;
+          map.panTo(location);
+          map.setZoom(14);
+        } else if (stores.length > 0) {
+          // ジオコーディングに失敗した場合、最初の店舗位置に移動
+          const firstStore = stores[0];
+          const center = {
+            lat: parseFloat(firstStore.latitude),
+            lng: parseFloat(firstStore.longitude),
+          };
+          map.panTo(center);
+          map.setZoom(14);
+        }
+      },
+    );
   }, [map, stores, searchQuery]);
 
   return null;
