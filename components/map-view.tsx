@@ -1,16 +1,40 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { APIProvider, Map, AdvancedMarker, Pin } from "@vis.gl/react-google-maps";
+import { useState, useEffect, useCallback } from "react";
+import { APIProvider, Map, AdvancedMarker, Pin, useMap } from "@vis.gl/react-google-maps";
 import { Store } from "@/shared/schema";
 import { StaffPanel } from "./staff-panel";
+import { AddStoreForm } from "./add-store-form";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Search, Plus } from "lucide-react";
 import { searchStores } from "@/lib/actions";
 
 interface MapViewProps {
   initialStores: Store[];
   initialSelectedId?: string | null;
+}
+
+interface ContextMenuState {
+  show: boolean;
+  x: number;
+  y: number;
+  lat: number;
+  lng: number;
+}
+
+function MapEventHandler({ onRightClick }: { onRightClick: (e: google.maps.MapMouseEvent) => void }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!map) return;
+
+    const listener = map.addListener("rightclick", onRightClick);
+    return () => {
+      google.maps.event.removeListener(listener);
+    };
+  }, [map, onRightClick]);
+
+  return null;
 }
 
 export function MapView({ initialStores, initialSelectedId }: MapViewProps) {
@@ -19,6 +43,15 @@ export function MapView({ initialStores, initialSelectedId }: MapViewProps) {
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
+  const [contextMenu, setContextMenu] = useState<ContextMenuState>({
+    show: false,
+    x: 0,
+    y: 0,
+    lat: 0,
+    lng: 0,
+  });
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState<{ lat: number; lng: number } | null>(null);
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
 
   useEffect(() => {
@@ -58,6 +91,66 @@ export function MapView({ initialStores, initialSelectedId }: MapViewProps) {
     // selectedStoreIdは保持して、ピンの強調表示を維持
   };
 
+  const handleMapRightClick = useCallback((e: google.maps.MapMouseEvent) => {
+    if (e.latLng && e.domEvent) {
+      e.domEvent.preventDefault();
+      e.domEvent.stopPropagation();
+
+      const lat = e.latLng.lat();
+      const lng = e.latLng.lng();
+      const domEvent = e.domEvent;
+
+      let clientX = 0;
+      let clientY = 0;
+
+      if ("clientX" in domEvent && "clientY" in domEvent) {
+        clientX = domEvent.clientX;
+        clientY = domEvent.clientY;
+      } else if ("touches" in domEvent && domEvent.touches.length > 0) {
+        clientX = domEvent.touches[0].clientX;
+        clientY = domEvent.touches[0].clientY;
+      }
+
+      setContextMenu({
+        show: true,
+        x: clientX,
+        y: clientY,
+        lat,
+        lng,
+      });
+    }
+  }, []);
+
+  const handleAddStoreClick = () => {
+    if (contextMenu.lat && contextMenu.lng) {
+      setSelectedLocation({ lat: contextMenu.lat, lng: contextMenu.lng });
+      setShowAddForm(true);
+      setSelectedStore(null);
+    }
+    setContextMenu({ ...contextMenu, show: false });
+  };
+
+  const handleCloseAddForm = () => {
+    setShowAddForm(false);
+    setSelectedLocation(null);
+  };
+
+  const handleStoreAdded = (newStore: Store) => {
+    setStores([...stores, newStore]);
+    setShowAddForm(false);
+    setSelectedLocation(null);
+  };
+
+  useEffect(() => {
+    const handleClick = () => {
+      if (contextMenu.show) {
+        setContextMenu({ ...contextMenu, show: false });
+      }
+    };
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, [contextMenu.show]);
+
   const center = stores && stores.length > 0
     ? { lat: parseFloat(stores[0].latitude), lng: parseFloat(stores[0].longitude) }
     : { lat: 35.6812, lng: 139.7671 };
@@ -66,7 +159,7 @@ export function MapView({ initialStores, initialSelectedId }: MapViewProps) {
     <div className="relative w-full h-screen">
       <div className="absolute top-5 left-4 z-20 max-w-md w-full md:w-96">
         <div className="relative">
-          <Search className="absolute left-3 top-2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
             type="text"
             placeholder="会社名、店舗名、住所、スタッフ名で検索..."
@@ -77,6 +170,23 @@ export function MapView({ initialStores, initialSelectedId }: MapViewProps) {
           />
         </div>
       </div>
+
+      {contextMenu.show && (
+        <div
+          className="fixed bg-white shadow-lg rounded-md py-1 z-50 border border-gray-200"
+          style={{ top: contextMenu.y, left: contextMenu.x }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            onClick={handleAddStoreClick}
+            className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2"
+            data-testid="context-menu-add"
+          >
+            <Plus className="h-4 w-4" />
+            情報を掲載
+          </button>
+        </div>
+      )}
 
       <APIProvider apiKey={apiKey}>
         <Map
@@ -89,6 +199,7 @@ export function MapView({ initialStores, initialSelectedId }: MapViewProps) {
           fullscreenControl={false}
           streetViewControl={false}
         >
+          <MapEventHandler onRightClick={handleMapRightClick} />
           {stores && stores.map((store) => {
             const isSelected = store.id === selectedStoreId;
             return (
@@ -111,8 +222,15 @@ export function MapView({ initialStores, initialSelectedId }: MapViewProps) {
 
       <StaffPanel
         store={selectedStore}
-        open={!!selectedStore}
+        open={!!selectedStore && !showAddForm}
         onClose={handlePanelClose}
+      />
+
+      <AddStoreForm
+        open={showAddForm}
+        onClose={handleCloseAddForm}
+        location={selectedLocation}
+        onStoreAdded={handleStoreAdded}
       />
     </div>
   );

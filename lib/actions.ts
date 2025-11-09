@@ -2,6 +2,7 @@
 
 import { container } from "@/server/db";
 import { Store } from "@/shared/schema";
+import { v4 as uuidv4 } from "uuid";
 
 export async function getAllStores(): Promise<Store[]> {
   const { resources: items } = await container.items
@@ -56,4 +57,32 @@ export async function searchStores(query: string): Promise<Store[]> {
     ...item,
     postedAt: new Date(item.postedAt)
   }));
+}
+
+export async function addStore(data: {
+  companyName: string;
+  storeName: string;
+  address: string;
+  tel: string;
+  sns?: string;
+  staffName: string;
+  latitude: string;
+  longitude: string;
+}): Promise<Store> {
+  const newStore: Store = {
+    id: uuidv4(),
+    companyName: data.companyName,
+    storeName: data.storeName,
+    address: data.address,
+    tel: data.tel,
+    sns: data.sns || "",
+    staffName: data.staffName,
+    latitude: data.latitude,
+    longitude: data.longitude,
+    postedAt: new Date(),
+  };
+
+  await container.items.create(newStore);
+  
+  return newStore;
 }
