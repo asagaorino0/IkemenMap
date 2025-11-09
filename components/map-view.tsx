@@ -42,11 +42,134 @@ function MapEventHandler({
     }
 
     console.log("MapEventHandler: rightclickリスナーを登録");
-    const listener = map.addListener("rightclick", onRightClick);
+    const rightClickListener = map.addListener("rightclick", onRightClick);
+
+    // スマホ長押し対応
+    let touchTimer: NodeJS.Timeout | null = null;
+    let touchStartEvent: TouchEvent | null = null;
+    let longPressTriggered = false;
+
+    const mapDiv = map.getDiv();
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return; // 1本指のみ
+
+      touchStartEvent = e;
+      longPressTriggered = false;
+
+      touchTimer = setTimeout(() => {
+        if (!touchStartEvent) return;
+
+        const touch = touchStartEvent.touches[0];
+        const rect = mapDiv.getBoundingClientRect();
+        const x = touch.clientX - rect.left;
+        const y = touch.clientY - rect.top;
+
+        // 緯度経度を取得（Projection使用）
+        const projection = map.getProjection();
+        if (!projection) return;
+
+        const bounds = map.getBounds();
+        if (!bounds) return;
+
+        const ne = bounds.getNorthEast();
+        const sw = bounds.getSouthWest();
+        const topRight = projection.fromLatLngToPoint(ne);
+        const bottomLeft = projection.fromLatLngToPoint(sw);
+
+        if (!topRight || !bottomLeft) return;
+
+        const scale = Math.pow(2, map.getZoom() || 0);
+        const worldPoint = new google.maps.Point(
+          x / scale + bottomLeft.x,
+          y / scale + topRight.y
+        );
+        const latLng = projection.fromPointToLatLng(worldPoint);
+
+        if (!latLng) return;
+
+        longPressTriggered = true;
+        console.log("MapEventHandler: 長押し検出", latLng.lat(), latLng.lng());
+
+        // 擬似的なMapMouseEventを作成
+        const mockEvent = {
+          latLng: latLng,
+          domEvent: e,
+          stop: () => { },
+        } as google.maps.MapMouseEvent;
+
+        onRightClick(mockEvent);
+
+        // 長押し時はデフォルト動作を防ぐ
+        e.preventDefault();
+        e.stopPropagation();
+      }, 600); // 600msで長押し判定
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!touchStartEvent || e.touches.length !== 1) {
+        if (touchTimer) {
+          clearTimeout(touchTimer);
+          touchTimer = null;
+        }
+        return;
+      }
+
+      const startTouch = touchStartEvent.touches[0];
+      const currentTouch = e.touches[0];
+
+      // 移動距離をチェック（ピクセル単位）
+      const deltaX = Math.abs(currentTouch.clientX - startTouch.clientX);
+      const deltaY = Math.abs(currentTouch.clientY - startTouch.clientY);
+
+      if (deltaX > 10 || deltaY > 10) {
+        // 10px以上移動したらキャンセル
+        if (touchTimer) {
+          clearTimeout(touchTimer);
+          touchTimer = null;
+        }
+      }
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (touchTimer) {
+        clearTimeout(touchTimer);
+        touchTimer = null;
+      }
+
+      // 長押しが発火した場合はデフォルト動作を防ぐ
+      if (longPressTriggered) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+
+      touchStartEvent = null;
+      longPressTriggered = false;
+    };
+
+    // コンテキストメニューのみ防ぐ
+    const preventDefaultContextMenu = (e: Event) => {
+      e.preventDefault();
+      e.stopPropagation();
+    };
+
+    mapDiv.addEventListener("contextmenu", preventDefaultContextMenu);
+    mapDiv.addEventListener("touchstart", handleTouchStart, { passive: false });
+    mapDiv.addEventListener("touchmove", handleTouchMove, { passive: false });
+    mapDiv.addEventListener("touchend", handleTouchEnd, { passive: false });
 
     return () => {
-      console.log("MapEventHandler: rightclickリスナーを削除");
-      google.maps.event.removeListener(listener);
+      console.log("MapEventHandler: リスナーを削除");
+      google.maps.event.removeListener(rightClickListener);
+
+      mapDiv.removeEventListener("contextmenu", preventDefaultContextMenu);
+      mapDiv.removeEventListener("touchstart", handleTouchStart);
+      mapDiv.removeEventListener("touchmove", handleTouchMove);
+      mapDiv.removeEventListener("touchend", handleTouchEnd);
+
+      if (touchTimer) {
+        clearTimeout(touchTimer);
+      }
     };
   }, [map, onRightClick]);
 
