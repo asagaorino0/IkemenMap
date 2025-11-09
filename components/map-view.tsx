@@ -12,7 +12,7 @@ import { Store } from "@/shared/schema";
 import { StaffPanel } from "./staff-panel";
 import { AddStoreForm } from "./add-store-form";
 import { Input } from "@/components/ui/input";
-import { Search, Plus } from "lucide-react";
+import { Search, Plus, ZoomIn } from "lucide-react";
 import { searchStores } from "@/lib/actions";
 
 interface MapViewProps {
@@ -179,11 +179,19 @@ function MapEventHandler({
 function MapCenterController({
   stores,
   searchQuery,
+  onMapReady,
 }: {
   stores: Store[];
   searchQuery: string;
+  onMapReady?: (map: google.maps.Map) => void;
 }) {
   const map = useMap();
+
+  useEffect(() => {
+    if (map && onMapReady) {
+      onMapReady(map);
+    }
+  }, [map, onMapReady]);
 
   useEffect(() => {
     if (!map || !searchQuery) return;
@@ -232,6 +240,7 @@ export function MapView({ initialStores, initialSelectedId }: MapViewProps) {
     lat: number;
     lng: number;
   } | null>(null);
+  const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
 
   useEffect(() => {
@@ -310,6 +319,15 @@ export function MapView({ initialStores, initialSelectedId }: MapViewProps) {
     setContextMenu({ ...contextMenu, show: false });
   };
 
+  const handleZoomClick = () => {
+    if (mapInstance && contextMenu.lat && contextMenu.lng) {
+      const currentZoom = mapInstance.getZoom() || 12;
+      mapInstance.panTo({ lat: contextMenu.lat, lng: contextMenu.lng });
+      mapInstance.setZoom(currentZoom + 2);
+    }
+    setContextMenu({ ...contextMenu, show: false });
+  };
+
   const handleCloseAddForm = () => {
     setShowAddForm(false);
     setSelectedLocation(null);
@@ -371,6 +389,14 @@ export function MapView({ initialStores, initialSelectedId }: MapViewProps) {
           onClick={(e) => e.stopPropagation()}
         >
           <button
+            onClick={handleZoomClick}
+            className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2"
+            data-testid="context-menu-zoom"
+          >
+            <ZoomIn className="h-4 w-4" />
+            ズームイン
+          </button>
+          <button
             onClick={handleAddStoreClick}
             className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2"
             data-testid="context-menu-add"
@@ -396,7 +422,11 @@ export function MapView({ initialStores, initialSelectedId }: MapViewProps) {
           disableDoubleClickZoom={false}
         >
           <MapEventHandler onRightClick={handleMapRightClick} />
-          <MapCenterController stores={stores} searchQuery={searchQuery} />
+          <MapCenterController
+            stores={stores}
+            searchQuery={searchQuery}
+            onMapReady={setMapInstance}
+          />
           {stores &&
             stores.map((store) => {
               const isSelected = store.id === selectedStoreId;
