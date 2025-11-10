@@ -426,7 +426,7 @@ export function MapView({ initialStores, initialSelectedId }: MapViewProps) {
             data-testid="context-menu-zoom"
           >
             <ZoomIn className="h-4 w-4" />
-            🔍ズーム
+            ズームイン
           </button>
           <button
             onClick={handleAddStoreClick}
