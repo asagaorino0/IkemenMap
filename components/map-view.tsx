@@ -40,132 +40,36 @@ function MapEventHandler({
       return;
     }
 
-    console.log("MapEventHandler: rightclickリスナーを登録");
+    // PCかどうかを判定（マウスデバイスがあるか）
+    const isDesktop = window.matchMedia("(pointer: fine)").matches;
+
+    console.log(
+      `MapEventHandler: デバイス判定 - ${isDesktop ? "PC" : "スマホ"}`,
+    );
+
+    // 右クリックリスナー（PCのみ）
     const rightClickListener = map.addListener("rightclick", onRightClick);
 
-    // スマホ長押し対応
-    let touchTimer: NodeJS.Timeout | null = null;
-    let touchStartEvent: TouchEvent | null = null;
-    let longPressTriggered = false;
-
-    const mapDiv = map.getDiv();
-
-    // ドラッグ開始時に長押しタイマーをキャンセル
-    const dragStartListener = map.addListener("dragstart", () => {
-      if (touchTimer) {
-        clearTimeout(touchTimer);
-        touchTimer = null;
-      }
-      longPressTriggered = false;
-    });
-
-    const handleTouchStart = (e: TouchEvent) => {
-      if (e.touches.length !== 1) return;
-
-      touchStartEvent = e;
-      longPressTriggered = false;
-
-      touchTimer = setTimeout(() => {
-        if (!touchStartEvent) return;
-
-        const touch = touchStartEvent.touches[0];
-        const rect = mapDiv.getBoundingClientRect();
-        const x = touch.clientX - rect.left;
-        const y = touch.clientY - rect.top;
-
-        const projection = map.getProjection();
-        if (!projection) return;
-
-        const bounds = map.getBounds();
-        if (!bounds) return;
-
-        const ne = bounds.getNorthEast();
-        const sw = bounds.getSouthWest();
-        const topRight = projection.fromLatLngToPoint(ne);
-        const bottomLeft = projection.fromLatLngToPoint(sw);
-
-        if (!topRight || !bottomLeft) return;
-
-        const scale = Math.pow(2, map.getZoom() || 0);
-        const worldPoint = new google.maps.Point(
-          x / scale + bottomLeft.x,
-          y / scale + topRight.y,
-        );
-        const latLng = projection.fromPointToLatLng(worldPoint);
-
-        if (!latLng) return;
-
-        longPressTriggered = true;
-        console.log("MapEventHandler: 長押し検出", latLng.lat(), latLng.lng());
-
-        const mockEvent = {
-          latLng: latLng,
-          domEvent: touchStartEvent,
-          stop: () => { },
-        } as google.maps.MapMouseEvent;
-
-        onRightClick(mockEvent);
-      }, 600);
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (!touchStartEvent || e.touches.length !== 1) {
-        if (touchTimer) {
-          clearTimeout(touchTimer);
-          touchTimer = null;
+    // 左クリックリスナー（PCのみ）
+    let clickListener: google.maps.MapsEventListener | null = null;
+    if (isDesktop) {
+      clickListener = map.addListener("click", (e: google.maps.MapMouseEvent) => {
+        if (e.latLng) {
+          console.log(
+            "MapEventHandler: クリック検出 - 中心を移動",
+            e.latLng.lat(),
+            e.latLng.lng(),
+          );
+          map.panTo(e.latLng);
         }
-        return;
-      }
-
-      const startTouch = touchStartEvent.touches[0];
-      const currentTouch = e.touches[0];
-
-      // 移動距離をチェック（ピクセル単位）
-      const deltaX = Math.abs(currentTouch.clientX - startTouch.clientX);
-      const deltaY = Math.abs(currentTouch.clientY - startTouch.clientY);
-
-      if (deltaX > 10 || deltaY > 10) {
-        // 10px以上移動したらキャンセル
-        if (touchTimer) {
-          clearTimeout(touchTimer);
-          touchTimer = null;
-        }
-      }
-    };
-
-    const handleTouchEnd = () => {
-      if (touchTimer) {
-        clearTimeout(touchTimer);
-        touchTimer = null;
-      }
-
-      touchStartEvent = null;
-      longPressTriggered = false;
-    };
-
-    // コンテキストメニューのみ防ぐ
-    const preventDefaultContextMenu = (e: Event) => {
-      e.preventDefault();
-      e.stopPropagation();
-    };
-
-    mapDiv.addEventListener("contextmenu", preventDefaultContextMenu);
-    mapDiv.addEventListener("touchstart", handleTouchStart, { passive: true });
-    mapDiv.addEventListener("touchmove", handleTouchMove, { passive: true });
-    mapDiv.addEventListener("touchend", handleTouchEnd, { passive: true });
+      });
+    }
 
     return () => {
       console.log("MapEventHandler: リスナーを削除");
       google.maps.event.removeListener(rightClickListener);
-      google.maps.event.removeListener(dragStartListener);
-
-      mapDiv.removeEventListener("contextmenu", preventDefaultContextMenu);
-      mapDiv.removeEventListener("touchstart", handleTouchStart);
-      mapDiv.removeEventListener("touchmove", handleTouchMove);
-      mapDiv.removeEventListener("touchend", handleTouchEnd);
-
-      if (touchTimer) {
-        clearTimeout(touchTimer);
+      if (clickListener) {
+        google.maps.event.removeListener(clickListener);
       }
     };
   }, [map, onRightClick]);
@@ -405,7 +309,7 @@ export function MapView({ initialStores, initialSelectedId }: MapViewProps) {
 
   return (
     <div className="relative w-full h-screen">
-      <div className="absolute top-1 md:top-5 left-1 md:left-4 z-20 max-w-md w-96">
+      <div className="absolute top-12 md:top-12 md:mt-3 left-[2%] md:left-4 z-20 max-w-md w-[82%] md:w-96">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
@@ -419,8 +323,7 @@ export function MapView({ initialStores, initialSelectedId }: MapViewProps) {
         </div>
       </div>
 
-      {/* 現在地ボタン */}
-      <div className="absolute top-12 right-4 z-20">
+      <div className="absolute top-12 md:top-12 md:mt-3 right-[2%] md:right-4 z-20">
         <button
           onClick={handleCurrentLocationClick}
           className="bg-white p-3 rounded-lg shadow-lg hover:bg-gray-50 active:bg-gray-100 transition-colors"
