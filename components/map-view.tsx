@@ -51,7 +51,7 @@ function MapEventHandler({
     const mapDiv = map.getDiv();
 
     const handleTouchStart = (e: TouchEvent) => {
-      if (e.touches.length !== 1) return; // 1本指のみ
+      if (e.touches.length !== 1) return;
 
       touchStartEvent = e;
       longPressTriggered = false;
@@ -64,7 +64,6 @@ function MapEventHandler({
         const x = touch.clientX - rect.left;
         const y = touch.clientY - rect.top;
 
-        // 緯度経度を取得（Projection使用）
         const projection = map.getProjection();
         if (!projection) return;
 
@@ -90,19 +89,14 @@ function MapEventHandler({
         longPressTriggered = true;
         console.log("MapEventHandler: 長押し検出", latLng.lat(), latLng.lng());
 
-        // 擬似的なMapMouseEventを作成
         const mockEvent = {
           latLng: latLng,
-          domEvent: e,
+          domEvent: touchStartEvent,
           stop: () => { },
         } as google.maps.MapMouseEvent;
 
         onRightClick(mockEvent);
-
-        // 長押し時はデフォルト動作を防ぐ
-        e.preventDefault();
-        e.stopPropagation();
-      }, 600); // 600msで長押し判定
+      }, 600);
     };
 
     const handleTouchMove = (e: TouchEvent) => {
@@ -130,16 +124,10 @@ function MapEventHandler({
       }
     };
 
-    const handleTouchEnd = (e: TouchEvent) => {
+    const handleTouchEnd = () => {
       if (touchTimer) {
         clearTimeout(touchTimer);
         touchTimer = null;
-      }
-
-      // 長押しが発火した場合はデフォルト動作を防ぐ
-      if (longPressTriggered) {
-        e.preventDefault();
-        e.stopPropagation();
       }
 
       touchStartEvent = null;
@@ -153,9 +141,9 @@ function MapEventHandler({
     };
 
     mapDiv.addEventListener("contextmenu", preventDefaultContextMenu);
-    mapDiv.addEventListener("touchstart", handleTouchStart, { passive: false });
-    mapDiv.addEventListener("touchmove", handleTouchMove, { passive: false });
-    mapDiv.addEventListener("touchend", handleTouchEnd, { passive: false });
+    mapDiv.addEventListener("touchstart", handleTouchStart, { passive: true });
+    mapDiv.addEventListener("touchmove", handleTouchMove, { passive: true });
+    mapDiv.addEventListener("touchend", handleTouchEnd, { passive: true });
 
     return () => {
       console.log("MapEventHandler: リスナーを削除");
@@ -178,10 +166,12 @@ function MapEventHandler({
 function MapCenterController({
   stores,
   searchQuery,
+  selectedStore,
   onMapReady,
 }: {
   stores: Store[];
   searchQuery: string;
+  selectedStore: Store | null;
   onMapReady?: (map: google.maps.Map) => void;
 }) {
   const map = useMap();
@@ -192,10 +182,22 @@ function MapCenterController({
     }
   }, [map, onMapReady]);
 
+  // 選択された店舗に地図を移動
+  useEffect(() => {
+    if (!map || !selectedStore) return;
+
+    const center = {
+      lat: parseFloat(selectedStore.latitude),
+      lng: parseFloat(selectedStore.longitude),
+    };
+    map.panTo(center);
+    map.setZoom(15);
+  }, [map, selectedStore]);
+
+  // 検索クエリで地図を移動
   useEffect(() => {
     if (!map || !searchQuery) return;
 
-    // 検索クエリをジオコーディングして地図を移動
     const geocoder = new google.maps.Geocoder();
     geocoder.geocode(
       { address: searchQuery, region: "jp" },
@@ -205,7 +207,6 @@ function MapCenterController({
           map.panTo(location);
           map.setZoom(14);
         } else if (stores.length > 0) {
-          // ジオコーディングに失敗した場合、最初の店舗位置に移動
           const firstStore = stores[0];
           const center = {
             lat: parseFloat(firstStore.latitude),
@@ -456,6 +457,7 @@ export function MapView({ initialStores, initialSelectedId }: MapViewProps) {
           <MapCenterController
             stores={stores}
             searchQuery={searchQuery}
+            selectedStore={selectedStore}
             onMapReady={setMapInstance}
           />
           {stores &&
