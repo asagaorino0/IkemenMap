@@ -12,7 +12,7 @@ import { Store } from "@/shared/schema";
 import { StaffPanel } from "./staff-panel";
 import { AddStoreForm } from "./add-store-form";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, ZoomIn } from "lucide-react";
+import { Search, Plus, ZoomIn, Navigation } from "lucide-react";
 import { searchStores } from "@/lib/actions";
 
 interface MapViewProps {
@@ -328,6 +328,26 @@ export function MapView({ initialStores, initialSelectedId }: MapViewProps) {
     setContextMenu({ ...contextMenu, show: false });
   };
 
+  const handleCurrentLocationClick = () => {
+    if (!mapInstance) return;
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          mapInstance.panTo({ lat: latitude, lng: longitude });
+          mapInstance.setZoom(15);
+        },
+        (error) => {
+          console.error("現在地の取得に失敗しました:", error);
+          alert("現在地を取得できませんでした。位置情報の使用を許可してください。");
+        }
+      );
+    } else {
+      alert("お使いのブラウザは位置情報に対応していません。");
+    }
+  };
+
   const handleCloseAddForm = () => {
     setShowAddForm(false);
     setSelectedLocation(null);
@@ -373,6 +393,18 @@ export function MapView({ initialStores, initialSelectedId }: MapViewProps) {
         </div>
       </div>
 
+      {/* 現在地ボタン */}
+      <div className="absolute top-5 right-4 z-20">
+        <button
+          onClick={handleCurrentLocationClick}
+          className="bg-white p-3 rounded-lg shadow-lg hover:bg-gray-50 active:bg-gray-100 transition-colors"
+          title="現在地へ移動"
+          data-testid="current-location-button"
+        >
+          <Navigation className="h-5 w-5 text-blue-600" />
+        </button>
+      </div>
+
       {/* 地図の中心を示す十字マーク */}
       <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none">
         <div className="relative w-8 h-8">
@@ -394,7 +426,7 @@ export function MapView({ initialStores, initialSelectedId }: MapViewProps) {
             data-testid="context-menu-zoom"
           >
             <ZoomIn className="h-4 w-4" />
-            ズームイン
+            🔍ズーム
           </button>
           <button
             onClick={handleAddStoreClick}
