@@ -5,14 +5,13 @@ import {
   APIProvider,
   Map,
   AdvancedMarker,
-  Pin,
   useMap,
 } from "@vis.gl/react-google-maps";
 import { Store } from "@/shared/schema";
 import { StaffPanel } from "./staff-panel";
 import { AddStoreForm } from "./add-store-form";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, ZoomIn, Navigation } from "lucide-react";
+import { Search, Plus, ZoomIn, Navigation, Heart } from "lucide-react";
 import { searchStores } from "@/lib/actions";
 
 interface MapViewProps {
@@ -471,12 +470,19 @@ export function MapView({ initialStores, initialSelectedId }: MapViewProps) {
                   }}
                   onClick={() => handleMarkerClick(store)}
                 >
-                  <Pin
-                    background={isSelected ? "#ef4444" : "#1a73e8"}
-                    borderColor={isSelected ? "#dc2626" : "#174ea6"}
-                    glyphColor="#fff"
-                    scale={isSelected ? 1.3 : 1.0}
-                  />
+                  <div
+                    className={`flex items-center justify-center transition-transform ${isSelected ? 'scale-150' : 'scale-100'
+                      }`}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <Heart
+                      className={`h-8 w-8 ${isSelected ? 'text-red-500 fill-red-500' : 'text-pink-500 fill-pink-500'
+                        }`}
+                      style={{
+                        filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+                      }}
+                    />
+                  </div>
                 </AdvancedMarker>
               );
             })}
