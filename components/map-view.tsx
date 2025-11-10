@@ -47,22 +47,121 @@ function MapEventHandler({
       `MapEventHandler: デバイス判定 - ${isDesktop ? "PC" : "スマホ"}`,
     );
 
+    const mapDiv = map.getDiv();
+
     // 右クリックリスナー（PCのみ）
     const rightClickListener = map.addListener("rightclick", onRightClick);
 
     // 左クリックリスナー（PCのみ）
     let clickListener: google.maps.MapsEventListener | null = null;
     if (isDesktop) {
-      clickListener = map.addListener("click", (e: google.maps.MapMouseEvent) => {
-        if (e.latLng) {
-          console.log(
-            "MapEventHandler: クリック検出 - 中心を移動",
-            e.latLng.lat(),
-            e.latLng.lng(),
-          );
-          map.panTo(e.latLng);
+      clickListener = map.addListener(
+        "click",
+        (e: google.maps.MapMouseEvent) => {
+          if (e.latLng) {
+            console.log(
+              "MapEventHandler: クリック検出 - 中心を移動",
+              e.latLng.lat(),
+              e.latLng.lng(),
+            );
+            map.panTo(e.latLng);
+          }
+        },
+      );
+    }
+
+    // スマホ長押し対応
+    let touchTimer: NodeJS.Timeout | null = null;
+    let touchStartEvent: TouchEvent | null = null;
+    let longPressTriggered = false;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+
+      touchStartEvent = e;
+      longPressTriggered = false;
+
+      touchTimer = setTimeout(() => {
+        if (!touchStartEvent) return;
+
+        const touch = touchStartEvent.touches[0];
+        const rect = mapDiv.getBoundingClientRect();
+        const x = touch.clientX - rect.left;
+        const y = touch.clientY - rect.top;
+
+        const projection = map.getProjection();
+        if (!projection) return;
+
+        const bounds = map.getBounds();
+        if (!bounds) return;
+
+        const ne = bounds.getNorthEast();
+        const sw = bounds.getSouthWest();
+        const topRight = projection.fromLatLngToPoint(ne);
+        const bottomLeft = projection.fromLatLngToPoint(sw);
+
+        if (!topRight || !bottomLeft) return;
+
+        const scale = Math.pow(2, map.getZoom() || 0);
+        const worldPoint = new google.maps.Point(
+          x / scale + bottomLeft.x,
+          y / scale + topRight.y,
+        );
+        const latLng = projection.fromPointToLatLng(worldPoint);
+
+        if (!latLng) return;
+
+        console.log("MapEventHandler: 長押し検出", latLng.lat(), latLng.lng());
+
+        const mockEvent = {
+          latLng: latLng,
+          domEvent: touchStartEvent,
+          stop: () => { },
+        } as google.maps.MapMouseEvent;
+
+        onRightClick(mockEvent);
+      }, 600);
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!touchStartEvent || e.touches.length !== 1) {
+        if (touchTimer) {
+          clearTimeout(touchTimer);
+          touchTimer = null;
         }
+        return;
+      }
+
+      const startTouch = touchStartEvent.touches[0];
+      const currentTouch = e.touches[0];
+
+      const deltaX = Math.abs(currentTouch.clientX - startTouch.clientX);
+      const deltaY = Math.abs(currentTouch.clientY - startTouch.clientY);
+
+      if (deltaX > 10 || deltaY > 10) {
+        if (touchTimer) {
+          clearTimeout(touchTimer);
+          touchTimer = null;
+        }
+      }
+    };
+
+    const handleTouchEnd = () => {
+      if (touchTimer) {
+        clearTimeout(touchTimer);
+        touchTimer = null;
+      }
+
+      touchStartEvent = null;
+    };
+
+    // スマホのみ長押しリスナーを追加
+    if (!isDesktop) {
+      mapDiv.addEventListener("touchstart", handleTouchStart, {
+        passive: true,
       });
+      mapDiv.addEventListener("touchmove", handleTouchMove, { passive: true });
+      mapDiv.addEventListener("touchend", handleTouchEnd, { passive: true });
     }
 
     return () => {
@@ -70,6 +169,16 @@ function MapEventHandler({
       google.maps.event.removeListener(rightClickListener);
       if (clickListener) {
         google.maps.event.removeListener(clickListener);
+      }
+
+      if (!isDesktop) {
+        mapDiv.removeEventListener("touchstart", handleTouchStart);
+        mapDiv.removeEventListener("touchmove", handleTouchMove);
+        mapDiv.removeEventListener("touchend", handleTouchEnd);
+      }
+
+      if (touchTimer) {
+        clearTimeout(touchTimer);
       }
     };
   }, [map, onRightClick]);
