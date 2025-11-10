@@ -309,7 +309,7 @@ export function MapView({ initialStores, initialSelectedId }: MapViewProps) {
 
   return (
     <div className="relative w-full h-screen">
-      <div className="absolute top-12 md:top-12 md:mt-3 left-[2%] md:left-4 z-20 max-w-md w-[82%] md:w-96">
+      <div className="absolute top-12 mt-3 md:top-12 md:mt-0 left-[2%] md:left-4 z-20 max-w-md w-[82%] md:w-96">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
@@ -323,7 +323,7 @@ export function MapView({ initialStores, initialSelectedId }: MapViewProps) {
         </div>
       </div>
 
-      <div className="absolute top-12 md:top-12 md:mt-3 right-[2%] md:right-4 z-20">
+      <div className="absolute top-12 mt-3 md:top-12 md:mt-0 right-[2%] md:right-4 z-20">
         <button
           onClick={handleCurrentLocationClick}
           className="bg-white p-3 rounded-lg shadow-lg hover:bg-gray-50 active:bg-gray-100 transition-colors"
