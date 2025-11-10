@@ -50,6 +50,15 @@ function MapEventHandler({
 
     const mapDiv = map.getDiv();
 
+    // ドラッグ開始時に長押しタイマーをキャンセル
+    const dragStartListener = map.addListener("dragstart", () => {
+      if (touchTimer) {
+        clearTimeout(touchTimer);
+        touchTimer = null;
+      }
+      longPressTriggered = false;
+    });
+
     const handleTouchStart = (e: TouchEvent) => {
       if (e.touches.length !== 1) return;
 
@@ -80,7 +89,7 @@ function MapEventHandler({
         const scale = Math.pow(2, map.getZoom() || 0);
         const worldPoint = new google.maps.Point(
           x / scale + bottomLeft.x,
-          y / scale + topRight.y
+          y / scale + topRight.y,
         );
         const latLng = projection.fromPointToLatLng(worldPoint);
 
@@ -148,6 +157,7 @@ function MapEventHandler({
     return () => {
       console.log("MapEventHandler: リスナーを削除");
       google.maps.event.removeListener(rightClickListener);
+      google.maps.event.removeListener(dragStartListener);
 
       mapDiv.removeEventListener("contextmenu", preventDefaultContextMenu);
       mapDiv.removeEventListener("touchstart", handleTouchStart);
@@ -307,11 +317,25 @@ export function MapView({ initialStores, initialSelectedId }: MapViewProps) {
         lat,
         lng,
       });
+      // 右クリック地点を画面中央に移動
+      // if (contextMenu.lat && contextMenu.lng) {
+      if (mapInstance) {
+        mapInstance.panTo({ lat, lng });
+      }
+      setSelectedLocation({ lat, lng });
+      // setShowAddForm(true);
+      // setSelectedStore(null);
+      // }
+      // setContextMenu({ ...contextMenu, show: false });
     }
   }, []);
 
   const handleAddStoreClick = () => {
     if (contextMenu.lat && contextMenu.lng) {
+      // 右クリック地点を画面中央に移動
+      if (mapInstance) {
+        mapInstance.panTo({ lat: contextMenu.lat, lng: contextMenu.lng });
+      }
       setSelectedLocation({ lat: contextMenu.lat, lng: contextMenu.lng });
       setShowAddForm(true);
       setSelectedStore(null);
@@ -340,8 +364,10 @@ export function MapView({ initialStores, initialSelectedId }: MapViewProps) {
         },
         (error) => {
           console.error("現在地の取得に失敗しました:", error);
-          alert("現在地を取得できませんでした。位置情報の使用を許可してください。");
-        }
+          alert(
+            "現在地を取得できませんでした。位置情報の使用を許可してください。",
+          );
+        },
       );
     } else {
       alert("お使いのブラウザは位置情報に対応していません。");
@@ -473,15 +499,17 @@ export function MapView({ initialStores, initialSelectedId }: MapViewProps) {
                   onClick={() => handleMarkerClick(store)}
                 >
                   <div
-                    className={`flex items-center justify-center transition-transform ${isSelected ? 'scale-150' : 'scale-100'
+                    className={`flex items-center justify-center transition-transform ${isSelected ? "scale-150" : "scale-100"
                       }`}
-                    style={{ cursor: 'pointer' }}
+                    style={{ cursor: "pointer" }}
                   >
                     <Heart
-                      className={`h-8 w-8 ${isSelected ? 'text-red-500 fill-red-500' : 'text-pink-500 fill-pink-500'
+                      className={`h-8 w-8 ${isSelected
+                        ? "text-red-500 fill-red-500"
+                        : "text-pink-500 fill-pink-500"
                         }`}
                       style={{
-                        filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+                        filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.3))",
                       }}
                     />
                   </div>
